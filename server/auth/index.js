@@ -12,7 +12,7 @@ router.get('/' , (req , res  ) =>{
 // POST /auth/signup
 
 router.post('/signup' , (req , res ,  next) =>{
-    console.log(req.body)
+    console.table(req.body)
     res.json({
         message: 'Tick Mark'
     })
