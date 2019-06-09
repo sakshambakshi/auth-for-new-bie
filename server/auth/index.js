@@ -34,6 +34,7 @@ router.post('/signup' , (req , res ,  next) =>{
                 connection.query(`SELECT username FROM users WHERE username = '${req.body.username} '` , (err , rows , fields) => {
                     if(rows.length){
                         const userExistError = new Error('This User exist .Please Choose another Username');
+                        connection.release();
                         next(userExistError)
                     }
                     else{
@@ -50,6 +51,7 @@ router.post('/signup' , (req , res ,  next) =>{
                                   connection.query(newUserInsertQuery,(err , rows , fields ) =>{
                                         console.log('Inside insert')
                                         res.json({change: rows.affectedRows});
+                                        connection.release();
                                     })
                                   }
                               )
