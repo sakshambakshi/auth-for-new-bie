@@ -1,7 +1,8 @@
 const express  =  require('express');
 const router = express.Router();
 const joi = require('@hapi/joi') 
-const bcrypt = require("bcryptjs")
+const bcrypt = require("bcryptjs");
+const jwt = require('jsonwebtoken')
 //db part 
 const db = require('../db/connection');
 
@@ -86,16 +87,21 @@ router.post('/login' , (req , res , next) =>{
                 connection.release()
             }
             else{
-                const userExistQuery = `SELECT username , password FROM users WHERE username = '${req.body.username} '`;
+                const userExistQuery = `SELECT * FROM users WHERE username = '${req.body.username} '`;
                 console.log(userExistQuery);
                connection.query(userExistQuery , (err , rows , fields) =>{
                    if(rows.length){
+                       const id = rows[0].id
                         const hashedPassword = rows[0].password;
                         console.log('Comparing password...', req.body.password , 'with the hash... ',hashedPassword)
                         bcrypt.compare( checkUser.password,hashedPassword ).then((resp)=>{
                            if(resp){
                                //Password true
-                               res.json({resp})
+                               const payload = {
+                                    _id: id , 
+                                    username: checkUser.username
+                               }
+                               res.json(payload)
                                connection.release()
                            }
                            else{
