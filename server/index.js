@@ -1,16 +1,13 @@
-const express = require('express');
-const volleyball = require('volleyball')
+const express = require('express'); //acquiring express
+const volleyball = require('volleyball') // acquiring volleyball a logger 
 
 
-const app = express();
+const app = express(); //creating app
 
+const auth = require('./auth/index'); //acquiring a route 
 
-
-
-const auth = require('./auth/index')
-
-app.use(volleyball);
-app.use(express.json())
+app.use(volleyball); // avtivating logger
+app.use(express.json()) // parses the json of body 
 app.get('/', (req, res) => {
   res.json({
     message: '🦄🌈✨Hello World! 🌈✨🦄'

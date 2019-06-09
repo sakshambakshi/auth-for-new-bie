@@ -21,7 +21,6 @@ router.get('/' , (req , res  ) =>{
 });
 
 // POST /auth/signup
-
 router.post('/signup' , (req , res ,  next) =>{
     console.table(req.body);
     const result = joi.validate(req.body , schema);
@@ -30,8 +29,11 @@ router.post('/signup' , (req , res ,  next) =>{
         db.getConnection((err , connection) =>{
             if(err){
                 res.json({ "code": 100, "status": "Error in connection database" })
+                connection.release()
             }else{
-                connection.query(`SELECT username FROM users WHERE username = '${req.body.username} '` , (err , rows , fields) => {
+                const userExistQuery = `SELECT username FROM users WHERE username = '${req.body.username} '`;
+                console.log(userExistQuery)
+                connection.query(userExistQuery , (err , rows , fields) => {
                     if(rows.length){
                         const userExistError = new Error('This User exist .Please Choose another Username');
                         connection.release();
@@ -60,11 +62,63 @@ router.post('/signup' , (req , res ,  next) =>{
                 })
             }
         })
-
-        
     }
     else{
+        res.status(422)
        next(result.error)
+    }
+})
+
+//login Route
+router.post('/login' , (req , res , next) =>{
+    console.table(req.body);
+    const result = joi.validate(req.body , schema);
+    // res.json(result)
+    if(!result.error){
+        const checkUser = {
+            username: req.body.username,
+            password: req.body.password
+        }
+        db.getConnection((err , connection) =>{
+            if(err){
+                res.json({ "code": 100, "status": "Error in connection database" })
+                connection.release()
+            }
+            else{
+                const userExistQuery = `SELECT username , password FROM users WHERE username = '${req.body.username} '`;
+                console.log(userExistQuery);
+               connection.query(userExistQuery , (err , rows , next) =>{
+                   if(rows.length){
+                        const hashedPassword = rows[0].password;
+                        console.log('Comparing password...', req.body.password , 'with the hash... ',hashedPassword)
+                        bcrypt.compare( checkUser.password,hashedPassword ).then((resp)=>{
+                           if(resp){
+                               //Password true
+                               connection.release()
+                           }
+                           else{
+                            //Wrong Password
+                            res.status(422);
+                            const error = new Error('Wrong Password')
+                            connection.release();
+                            next(error)
+                           }
+                        })
+                   }
+                   else{
+                       console.log('Username Not Found');
+                       res.status(422);
+                       const error = new Error('Wrong User Name ');
+                       connection.release() ;
+                       next(error);
+                   }
+               })
+            }
+        })
+    }
+    else{
+        res.status(422)
+        next(result.error);
     }
 })
 
