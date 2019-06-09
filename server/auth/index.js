@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken')
 //db part 
 const db = require('../db/connection');
 
+const dotenv = require('dotenv').config()
 // users.createIndex('username' , {unique: true})
 // any route in here will be prepended with auth
 
@@ -101,7 +102,17 @@ router.post('/login' , (req , res , next) =>{
                                     _id: id , 
                                     username: checkUser.username
                                }
-                               res.json(payload)
+                               console.log(process.env.TOKEN_SECRET)
+                               jwt.sign(payload ,process.env.TOKEN_SECRET , {
+                                   expiresIn: '1d'
+                               } , (err , token) =>{
+                                   if(err){
+                                       respondError422(res , next , '' , err)
+                                   }
+                                   else{
+                                       res.json({token})
+                                   }
+                               })
                                connection.release()
                            }
                            else{
