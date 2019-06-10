@@ -7,10 +7,8 @@ const jwt = require('jsonwebtoken')
 const db = require('../db/connection');
 
 const dotenv = require('dotenv').config()
-// users.createIndex('username' , {unique: true})
+
 // any route in here will be prepended with auth
-
-
 const schema = joi.object().keys({
     username: joi.string().regex(/([a-zA-Z0-9_]+$)/).min(3).max(30).required(),
     password: joi.string().min(6).max(32).required(),
@@ -78,68 +76,72 @@ router.post('/login' , (req , res , next) =>{
     const result = joi.validate(req.body , schema);
     // res.json(result)
     if(!result.error){
+        //IF USERNAME AND PASSWORD ARE VALID 
         const checkUser = {
             username: req.body.username,
             password: req.body.password
         }
+        //SET A CONNECTION WITH DB 
         db.getConnection((err , connection) =>{
             if(err){
+                //ERR DURING CONNECTION 
                 res.json({ "code": 100, "status": "Error in connection database" })
                 connection.release()
             }
             else{
+                //CONNECTED WITH DB THEN :- 
                 const userExistQuery = `SELECT * FROM users WHERE username = '${req.body.username} '`;
                 console.log(userExistQuery);
-               connection.query(userExistQuery , (err , rows , fields) =>{
-                   if(rows.length){
-                       const id = rows[0].id
-                        const hashedPassword = rows[0].password;
-                        console.log('Comparing password...', req.body.password , 'with the hash... ',hashedPassword)
-                        bcrypt.compare( checkUser.password,hashedPassword ).then((resp)=>{
-                           if(resp){
-                               //Password true
-                               const payload = {
-                                    _id: id , 
-                                    username: checkUser.username
-                               }
-                               console.log(process.env.TOKEN_SECRET)
-                               jwt.sign(payload ,process.env.TOKEN_SECRET , {
-                                   expiresIn: '1d'
-                               } , (err , token) =>{
-                                   if(err){
-                                       respondError422(res , next , '' , err)
-                                   }
-                                   else{
-                                       res.json({token})
-                                   }
-                               })
-                               connection.release()
-                           }
-                           else{
-                            //Wrong Password
-                            connection.release();
-                            // res.status(422);
-                            // const error = new Error('Wrong Password')
-                            // next(error)
-                            respondError422(res , next , 'Wrong Password')
-                           }
+                //Check wether user exist or not in db 
+                connection.query(userExistQuery , (err , rows , fields) =>{
+                if(rows.length){
+                    //if user exist  
+                    const id = rows[0].id
+                    const hashedPassword = rows[0].password;
+                    console.log('Comparing password...', req.body.password , 'with the hash... ',hashedPassword)
+                    //Compare the pasword given by user and hashed stored in db at password col 
+                    bcrypt.compare( checkUser.password,hashedPassword ).then((resp)=>{
+                    if(resp){
+                        //Password true
+                        const payload = {
+                            _id: id , 
+                            username: checkUser.username
+                        }
+                        console.log(process.env.TOKEN_SECRET)
+                        //Gen. a token 
+                        jwt.sign(payload ,process.env.TOKEN_SECRET , {
+                            expiresIn: '1d'
+                        } , (err , token) =>{
+                            if(err){
+                                //err during gen of token 
+                                respondError422(res , next , '' , err)
+                            }
+                            else{
+                                //sending token 
+                                res.json({token})
+                            }
                         })
-                   }
-                   else{
-                       console.log('Username Not Found');
-                       connection.release() ;
-                    //    res.status(422);
-                    //    const error = new Error('Wrong User Name ');
-                    //    next(error);
-                    respondError422(res , next , 'Wrong User Name' )
-                   }
+                        //releasing the db connection so that there are enough free connection available for db or to avoid the load at db 
+                        connection.release()
+                    }
+                    else{
+                    //Wrong Password
+                    connection.release();
+                    respondError422(res , next , 'Wrong Password')
+                    }
+                    })
+                }
+                else{
+                    console.log('Username Not Found');
+                    connection.release() ;
+                respondError422(res , next , 'Wrong User Name' )
+                }
                })
             }
         })
     }
     else{
-        // res.status(422)
-        // next(result.error);
+        //username and password validation error case 
         respondError422(res , next ,'' ,result.error)
     }
 });
