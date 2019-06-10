@@ -11,7 +11,7 @@ const dotenv = require('dotenv').config()
 // any route in here will be prepended with auth
 const schema = joi.object().keys({
     username: joi.string().regex(/([a-zA-Z0-9_]+$)/).min(3).max(30).required(),
-    password: joi.string().min(6).max(32).required(),
+    password: joi.string().trim().min(6).max(32).required(),
   });
 
 router.get('/' , (req , res  ) =>{
@@ -41,7 +41,7 @@ router.post('/signup' , (req , res ,  next) =>{
                     }
                     else{
                         console.log("User doesnt Exist");
-                        bcrypt.hash(req.body.password , 9 )
+                        bcrypt.hash(req.body.password.trim() , 9 )
                               .then(hashedPassword =>{
                                   const newUser = {
                                       username : req.body.username , 
@@ -57,7 +57,6 @@ router.post('/signup' , (req , res ,  next) =>{
                                     })
                                   }
                               )
-                        
                     }
                 })
             }
