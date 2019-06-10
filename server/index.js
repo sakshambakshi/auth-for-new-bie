@@ -4,13 +4,21 @@ const volleyball = require('volleyball') // acquiring volleyball a logger
 
 const app = express(); //creating app
 
+const middleware = require('./auth/middleware') 
 const auth = require('./auth/index'); //acquiring a route 
 
 app.use(volleyball); // avtivating logger
 app.use(express.json()) // parses the json of body 
+
+app.use((req , res , next) =>{
+  middleware(req , res , next)
+})
+
 app.get('/', (req, res) => {
+  console.log('here')
   res.json({
-    message: '🦄🌈✨Hello World! 🌈✨🦄'
+    message: '🦄🌈✨Hello World! 🌈✨🦄',
+    user: req.user 
   });
 });
 
