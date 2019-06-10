@@ -20,6 +20,28 @@ router.get('/' , (req , res  ) =>{
     })
 });
 
+function createTokenSendResponse( hashedPassword , req , res , id ,next ){
+    const payload = {
+        _id: id , 
+        username: req.body.username , 
+        password: hashedPassword , 
+    }
+    console.log(process.env.TOKEN_SECRET)
+    //Gen. a token 
+    jwt.sign(payload ,process.env.TOKEN_SECRET , {
+        expiresIn: '1d'
+    } , (err , token) =>{
+        if(err){
+            //err during gen of token 
+            respondError422(res , next , '' , err)
+        }
+        else{
+            //sending token 
+            res.json({token})
+        }
+    })
+}
+
 // POST /auth/signup
 router.post('/signup' , (req , res ,  next) =>{
     console.table(req.body);
@@ -51,8 +73,8 @@ router.post('/signup' , (req , res ,  next) =>{
                                   console.table(newUser);
                                   console.log(newUserInsertQuery)
                                   connection.query(newUserInsertQuery,(err , rows , fields ) =>{
-                                        console.log('Inside insert')
-                                        res.json({change: rows.affectedRows});
+                                        console.log('Inside insert')                       
+                                        createTokenSendResponse(hashedPassword , req , res ,rows.insertId , next)
                                         connection.release();
                                     })
                                   }
@@ -104,7 +126,8 @@ router.post('/login' , (req , res , next) =>{
                         //Password true
                         const payload = {
                             _id: id , 
-                            username: checkUser.username
+                            username: checkUser.username , 
+                            password: hashedPassword , 
                         }
                         console.log(process.env.TOKEN_SECRET)
                         //Gen. a token 
