@@ -6,6 +6,8 @@ const app = express(); //creating app
 
 const middleware = require('./auth/middleware') 
 const auth = require('./auth/index'); //acquiring a route 
+const notes = require('./api/notes')
+
 
 app.use(volleyball); // avtivating logger
 app.use(express.json()) // parses the json of body 
@@ -22,6 +24,9 @@ app.get('/', (req, res , next) => {
   });
   
 });
+
+app.use('/api/v1/notes' ,middleware.isLoggedIn , notes)
+
 app.use('/checking', middleware.isLoggedIn  , (req , res , next) => { 
   res.send(`Your username is ${req.user.username} and your id ${req.user._id}`);
   next()
