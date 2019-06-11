@@ -11,17 +11,21 @@ app.use(volleyball); // avtivating logger
 app.use(express.json()) // parses the json of body 
 
 app.use((req , res , next) =>{
-  middleware(req , res , next)
+  middleware.checkTokenSetUser(req , res , next)
 })
 
-app.get('/', (req, res) => {
+app.get('/', (req, res , next) => {
   console.log('here')
   res.json({
     message: '🦄🌈✨Hello World! 🌈✨🦄',
     user: req.user 
   });
+  
 });
-
+app.use('/checking', middleware.isLoggedIn  , (req , res , next) => { 
+  res.send(`Your username is ${req.user.username} and your id ${req.user._id}`);
+  next()
+})
 app.use('/auth' , auth)
 
 function notFound(req, res, next) {
